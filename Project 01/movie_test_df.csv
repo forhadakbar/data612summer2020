@@ -1,0 +1,17 @@
+,M01,M02,M03,M04,M05,M06,M07
+U01,False,False,False,False,True,False,False
+U02,True,False,False,False,False,True,False
+U03,False,False,True,False,True,True,False
+U04,False,False,False,False,True,False,True
+U05,False,False,True,False,False,False,False
+U06,False,False,False,True,False,False,False
+U07,False,False,False,False,False,False,False
+U08,False,False,False,False,False,False,False
+U09,True,False,False,False,True,True,False
+U10,False,True,True,False,True,True,True
+U11,False,False,False,False,False,False,False
+U12,False,False,False,True,False,False,False
+U13,True,True,False,False,False,False,False
+U14,True,True,True,False,False,False,True
+U15,False,False,True,False,False,True,False
+U16,False,False,False,False,False,False,False
