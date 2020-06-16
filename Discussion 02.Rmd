@@ -1,0 +1,82 @@
+---
+title: 'DATA 612: Discussion02'
+author: "Forhad Akbar"
+date: "06/15/2020"
+output:
+  html_document:
+    code_folding: show
+    df_print: paged
+    highlight: pygments
+    number_sections: no
+    pdf_document: default
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+## **Load Packages**
+
+```{r load-packages, warning = FALSE, message = FALSE}
+library(knitr)
+```
+
+## **Research Question**
+
+For this discussion item, please watch the following talk and summarize what you found to be the most important or interesting points. The first half will cover some of the mathematical techniques covered in this unit's reading and the second half some of the data management challenges in an industrial-scale recommendation system.
+
+YouTube URL: http://www.youtube.com/watch?v=3LBgiFch4_g
+
+## **Important or interesting points**
+
+This is a great video in discussing how spotify make recommendations to its end-users at scale. The main points that i found interesting or important are:  
+
+- Different recommendation methods used by different companies such as manual curation, intensive labelling and Collaborative filtering  
+
+- Spotify uses Collaborative filtering with implicit feedback data: relationships betweens users and items using implicit signals such as click through data or music streaming play counts to provide users with personalized recommendations. but not further metadata
+
+- Spotify used a binary metrix With 1 = streamed while 0 = never streamed
+ 
+- Spotify started building their recommendation in 2009 using hadoop with
+couple of computers which became huge network by 2014  
+
+- Spotify was experimenting with spark to improve their recommender system  
+
+- Spark lets them read the rating matrix from disk ONCE and keep in the rest in RAM  
+
+- Spark (half gridify) experimentally outperform hadoop  
+
+- He also talked about pairRDDFunction  
+
+I found two topics very interesting in this video: Explicit vs. Implicit Factorization and Hadoop Vs. Spark. I will discuss these topics below.
+
+## **Explicit vs. Implicit**
+
+Collaborative filtering with explicit feedback data aims to model relationships betweens users and items using explicit signals such as user-item ratings while Collaborative filtering with implicit feedback data analyze relationships betweens users and items using implicit signals such as click through data or music streaming play counts to provide users with personalized recommendations. An example of Collaborative filtering with explicit feedback data is Netflix which uses user-item ratings to model personalized recommendations. Spotify uses explicit feedback data (1 = streamed while 0 = never streamed) to model personalized recommendations for their users.
+
+## **Matrix Factorization**
+
+Christopher Johnson discuss how spotify used matrix factorization
+with implicit feedback in his [paper](https://web.stanford.edu/~rezab/nips2014workshop/submits/logmat.pdf). 
+
+![Matrix Factorization](./Factorization.jpg)
+
+- Instead of explicit ratings use binary labels. 1 = streamed while 0 = never streamed  
+- Uses Alternating Least Square (ALS) method to solve the metrix
+- Minimize weighted RMSE (root mean square error) using function of total streams as weights
+
+## **Hadoop Vs. Spark**
+
+To Scale recommender system a company need to look at multiple factors, from the algorithm complexity, the technique used and how to fight with things like network latency or I/O waiting times. The video compares different approaches in Spark that can scale better at the expense of worker infrastucture and more maintenance around resolvers for different data types coming from python.
+
+Spark served well in this case replacing Hadoop because the algorithm processing time went down 70%, and combined with different implementations of the algorithm (graph lab, mllab, etc) could generate different results. I believe what I can take from this conversation is even different versions of a library in the same language can vary, so an understanding of the algorithm and how to play with variations will be paramount to enhance the productivity of the whole recommender system.
+
+I don't have enough experience using spark or hadoop to further comment on 
+
+## **Sources**
+
+https://www.youtube.com/watch?v=3LBgiFch4_g
+
+https://web.stanford.edu/~rezab/nips2014workshop/submits/logmat.pdf
+
