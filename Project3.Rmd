@@ -1,0 +1,389 @@
+---
+title: " Project 3 | Matrix Factorization methods"
+author: "Forhad Akbar"
+date: "6/21/2020"
+output:
+  rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Project Objectives
+
+The goal of this assignment is give you practice working with Matrix Factorization techniques. Your task is implement a matrix factorization method—such as singular value decomposition (SVD) or Alternating Least Squares (ALS)—in the context of a recommender system. You may approach this assignment in a number of ways. You are welcome to start with an existing
+recommender system written by yourself or someone else. Remember as always to cite your sources, so that you can be graded on what you added, not what you found. SVD can be thought of as a pre-processing step for feature engineering. You might easily start with thousands or millions of items, and use SVD to create a much smaller set of “k” items (e.g. 20 or 70).  
+
+Notes/Limitations:  
+
+• SVD builds features that may or may not map neatly to items (such as movie genres or news topics). As in many areas of machine learning, the lack of explainability can be an issue).  
+• SVD requires that there are no missing values. There are various ways to handle this, including (1) imputation of missing values, (2) mean-centering values around 0, or (3) <advanced> using a more advance technique, such as stochastic gradient descent to simulate SVD in populating the factored matrices.  
+• Calculating the SVD matrices can be computationally expensive, although calculating ratings once the factorization is completed is very fast. You may need to create a subset of your data for SVD calculations to be successfully performed, especially on a machine with a small RAM footprint.  
+
+You may work in a small group. Please submit a link to your GitHub repository for your Jupyter notebook or RMarkdown file (and rpubs.com link).
+
+# Libraries
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(recommenderlab)
+library(reshape2)
+library(RCurl)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+library(tictoc)
+library(matlib)
+```
+
+# Mathematical steps for SVD computation
+
+We used the [Project-2](https://rpubs.com/forhadakbar/data612_project_02) of previous week, to build the Recommender system. But, we incorporated the SVD along the way. In order to explain the mathematics behind Single Value Decomposition, we'll give a brief outline of the algorithm for SVD computation, along with an example.  
+
+1. There is a well-known theorem that if $A$ is any $m×n$ matrix, there $∃$ three matrices $U$, $Σ$ and $V$ s.t. $A=U.Σ.V^T$. Refer Theorem 10 (page 417)), in ***Linear Algebra and its Applications, 4th Edition***, by David C. Lay.  
+<p>&nbsp;</p>
+
+2. What is $Σ$?  
+$Σ = \begin{bmatrix} D & 0 \\ 0 & 0 \end{bmatrix}$, where $D=\begin{bmatrix} { \sigma  }_{ 1 } & ... & 0 \\ ... & ... & ... \\ 0 & ... & { \sigma  }_{ r } \end{bmatrix}$, where ${ \sigma  }_{ 1 },{ \sigma  }_{ 2 },{ \sigma  }_{ 3 }...{ \sigma  }_{ r }$ are positive square roots of the Eigen Values of ${ A }^{ T }.A$.  
+<p>&nbsp;</p>
+
+3. What are $U$ and $V$?  
+Columns of $U$ will be LSV of $A$, and columns of $V$ will be RSV of $A$.  
+<p>&nbsp;</p>
+
+4. So, first compute ${ A }^{ T }.A$.  
+<p>&nbsp;</p>
+
+5. Next, compute Eigen Values of ${ A }^{ T }.A$:   $\lambda _{ 1 },{ \lambda  }_{ 2 },\lambda _{ 3 }......\lambda _{ r }$  
+<p>&nbsp;</p>
+
+6. Let’s, take square roots of the $\lambda _{ 1 }$, and assign to $\sigma _{ 1 }$:  
+    $\sigma _{ 1 }=\sqrt { { \lambda  }_{ 1 } } ,\quad \sigma _{ 2 }=\sqrt { { \lambda  }_{ 2 } } ,\quad \sigma _{ 3 }=\sqrt { { \lambda  }_{ 3 } } .....\quad \sigma _{ r }=\sqrt { { \lambda  }_{ r } }$  
+<p>&nbsp;</p>
+
+7. Also, compute the Eigen Vectors of ${ A }^{ T }.A$:   $V={ v }_{ 1 },{ v }_{ 2 },.....{ v }_{ n }$. These will be the RSV of $A$.  
+<p>&nbsp;</p>
+
+8. Now, compute:      ${ u }_{ 1 }=\frac { 1 }{ { \sigma  }_{ 1 } } A{ v }_{ 1 },{ u }_{ 2 }=\frac { 1 }{ { \sigma  }_{ 2 } } A{ v }_{ 2 },.....{ u }_{ r }=\frac { 1 }{ { \sigma  }_{ r } } A{ v }_{ r }$.  
+<p>&nbsp;</p>
+
+9. Then,
+$D=\begin{bmatrix} \sqrt { { \lambda  }_{ 1 } }  & ... & 0 \\ ... & ... & ... \\ 0 & ... & \sqrt { { \lambda  }_{ r } }  \end{bmatrix}$  
+<p>&nbsp;</p>
+
+10. Finally, $A=[{ u }_{ 1 }...{ u }_{ m }].Σ.{ [v_{ 1 }...{ v }_{ m }] }^{ T }$  
+<p>&nbsp;</p>
+
+## Math Example to implement the above outline
+
+1. We'll perform SVD of matrix $A=\begin{bmatrix} 1 & 2 & 3 \\ -1 & 0 & 4 \end{bmatrix}$  
+<p>&nbsp;</p>
+
+2. First, I'll code matrix $A$ and its transpose.  
+```{r}
+A <- matrix(c(1, -1, 2, 0, 3, 4), nrow = 2)
+print(A)
+A_T <- t(A)
+print(A_T)
+```
+
+3. Now, in order to compute $X$ = $A.{ A }^{ T }$ and $Y$ = ${ A }^{ T }.A$, I'll code a general purpose matrix multiplication function my_mat_mult(), in below code chunk.  
+```{r}
+my_mat_mult <- function(m1, m2)
+{
+    m1_rows <- c(1:nrow(m1)); m1_cols <- c(1:ncol(m1))
+    m2_rows <- c(1:nrow(m2)); m2_cols <- c(1:ncol(m2))
+    #
+    if(ncol(m1) != nrow(m2)) {
+        stop('matrices are not conformable for multiplication')
+    }
+    #
+    product <- matrix(0, nrow(m1), ncol(m2))
+    #
+    for(i in m1_rows) {
+        for(j in m2_cols) {
+            for(k in m1_cols) {
+                product[i, j] = product[i, j] + m1[i, k] * m2[k, j]
+            }
+        }
+    }
+    return(product)
+}
+```
+
+4. Computing $X$ and $Y$, by calling my_mat_mult().
+```{r}
+X <- my_mat_mult(A, A_T)
+print(X)
+Y <- my_mat_mult(A_T, A)
+print(Y)
+```
+
+5. Computing eigenvectors and eigenvalues of $X$ and $Y$, by R's built-in function eigen().
+```{r}
+e_X <- eigen(X)
+e_X
+e_Y <- eigen(Y)
+e_Y
+```
+
+6. Now, I'll do Single valued Decomposition (SVD) in the following code chunk, using R's built-in function, svd(). 
+```{r}
+SVD_A <- svd(A)
+SVD_A
+```
+
+**Explanation:** SVD_A contains the decomposed matrices of $A$, namely $A$, Sigma and V_transposed, in that order. Sigma contains a diagonal matrix in the top left, and zeros in the rest of the locations.  
+
+The column vectors of $U$ are the left-singular vectors of $A$. In the above results, observe the two columns vectors under $u.  
+
+The diagonal elements of D (top left in Sigma) are singular values  of A. Note that they not vectors, because they are just elements of the diagonal matrix, D. In the above results, observe the two numbers under $d.  
+
+The column vectors of $V$ are the right-singular vectors of $A$. In the above results, observe the two columns vectors $v.  
+
+
+Now, I'll compare the left-singular vectors of $A$ (i.e. $U$ or $u), with the eigen vectors of $X$. In comparison_table1, we observe that the two sets of vectors (without the signs) are equal each to each.  
+```{r}
+comparison_table1 <- cbind(SVD_A$u, e_X$vectors)
+colnames(comparison_table1) <- c('SVD_A_U_Col1', 'SVD_A_U_Col2', 'e_X_Col1', 'e_X_Col2')
+comparison_table1
+```
+
+7. In the following code chunk, I'll compare the right-singular vectors of $A$ (i.e. $V$ or $v), with the eigen vectors of $Y$. In this case, we know that while $Y$ has 3 eigen vectors, $V$ has 2 vectors. So, if we ignore the 3rd vector (column heading 'IGNORE'), then the two sets of vectors (without signs) are equal, each to each.  
+```{r}
+comparison_table2 <- cbind(SVD_A$v, e_Y$vectors)
+colnames(comparison_table2) <- c('SVD_A_V_Col1', 'SVD_A_V_Col2', 'e_Y_Col1', 'e_Y_Col2', 'IGNORE')
+comparison_table2
+```
+
+
+
+# Data Preparation and Exploration
+
+We gathered data from section "recommended for education and development" of site https://grouplens.org/datasets/movielens/. This site provides two links, from which we chose the link for the smaller file, because the larger one (named as Full) is too large to load into github. Description of the data is as follows:
+
+This dataset (ml-latest-small) describes 5-star rating and free-text tagging activity from MovieLens, a movie recommendation service. It contains 100836 ratings and 3683 tag applications across 9742 movies. These data were created by 610 users between March 29, 1996 and September 24, 2018. This dataset was generated on September 26, 2018. There are 4 *.csv files, from which we chose two files movies.cv and ratings.csv, for our down stream analysis.
+
+
+
+## Load Data
+
+```{r}
+movies <- read.csv("https://raw.githubusercontent.com/forhadakbar/data612summer2020/master/Project%2002/movies.csv")
+ratings <- read.csv("https://raw.githubusercontent.com/forhadakbar/data612summer2020/master/Project%2002/ratings.csv")
+```
+
+## Preview data
+
+```{r}
+#Preview movies data
+kable(head(movies, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+```{r}
+#Preview ratings data
+kable(head(ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+## Combine Data
+Join movies with ratings on movieId
+
+```{r}
+movie_ratings <- merge(ratings, movies, by="movieId")
+#Preview ratings data
+kable(head(movie_ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+
+
+## Create Matrix
+
+As opposed to *MovieLense* of the *recommenderlab*, our dataset does not come as member of class *realRatingMatrix*. So, in the following code-chunk, we'll create a realRatingMatrix dataset, called moviematrix. By putting moviematrix into class realRatingMatrix, we'll be able to apply some useful functions on moviematrix (refer: page 33 of *Building a Recommendation System with R*).
+
+```{r}
+moviematrix <- ratings %>% select(-timestamp) %>% spread(movieId, rating)
+
+row.names(moviematrix) <- moviematrix[, 1]
+
+moviematrix <- moviematrix[-c(1)]
+
+moviematrix <- as(as.matrix(moviematrix), "realRatingMatrix")
+
+moviematrix
+```
+
+At this point, we'll take stalk of the important characteristics of moviematrix.
+
+```{r}
+dim(moviematrix)
+```
+
+```{r}
+head(getData.frame(moviematrix))
+```
+
+# Data Visualization
+
+## Exploring the values of the rating
+
+```{r}
+# Vectorize and create unique vector.
+vector_ratings <- as.vector(moviematrix@data)
+unique(vector_ratings)
+```
+
+
+```{r}
+# The ratings are in the range 0-5. Let's count the occurrences of each of them.
+table_ratings <- table(vector_ratings)
+kable(table_ratings)
+```
+
+Rating equal to 0 represents a missing value, so we'll purge out the zero-ratings from vector_ratings.
+
+
+```{r}
+vector_ratings <- vector_ratings[vector_ratings != 0]
+vector_ratings <- factor(vector_ratings)
+qplot(vector_ratings) + ggtitle("Distribution of the ratings")
+```
+
+
+## Exploring which movies have been viewed
+
+```{r}
+views_per_movie <- colCounts(moviematrix)
+```
+
+```{r}
+
+table_views <- data.frame(
+movie = names(views_per_movie),
+views = views_per_movie
+)
+names(table_views)[names(table_views) == "movie"] <- "movieId"
+table_views <- merge(table_views, movies, by="movieId")
+table_views <- table_views[order(table_views$views, decreasing =
+TRUE), ]
+```
+
+```{r}
+ggplot(table_views[1:6, ], aes(x = title, y = views)) +
+geom_bar(stat="identity") + theme(axis.text.x =
+element_text(angle = 45, hjust = 1)) + ggtitle("Number of views
+of the top movies")
+```
+
+# Recommendation algorithms
+
+## Split the dataset into training set (80%) and testing set (20%):
+
+```{r}
+set.seed(88)
+eval <- evaluationScheme(moviematrix, method = "split",
+                         train = 0.8, given= 20, goodRating=3)
+train <- getData(eval, "train")
+known <- getData(eval, "known")
+unknown <- getData(eval, "unknown")
+```
+
+## User-User Collaborative Filtering
+
+```{r}
+tic("UBCF Model - Training")
+modelUBCF <- Recommender(train, method = "UBCF")
+toc(log = TRUE, quiet = TRUE)
+
+tic("UBCF Model - Predicting")
+predUBCF <- predict(modelUBCF, newdata = known, type = "ratings")
+toc(log = TRUE, quiet = TRUE)
+
+( accUBCF <- calcPredictionAccuracy(predUBCF, unknown) )
+```
+
+## Singular Value Decomposition Model(SVD Model)
+
+Please note that parameter *method = "SVD"*, which performs the SVD. In below code-chunk, we performed a benchmark of the performance, using "tictoc" library.  
+
+```{r}
+tic("SVD Model - Training")
+modelSVD <- Recommender(train, method = "SVD", parameter = list(k = 50))
+toc(log = TRUE, quiet = TRUE)
+
+tic("SVD Model - Predicting")
+predSVD <- predict(modelSVD, newdata = known, type = "ratings")
+toc(log = TRUE, quiet = TRUE)
+
+( accSVD <- calcPredictionAccuracy(predSVD, unknown) )
+```
+
+## Run-Time comparison
+
+```{r}
+log <- as.data.frame(unlist(tic.log(format = TRUE)))
+colnames(log) <- c("Run Time")
+knitr::kable(log, format = "html") %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+We'll observe that while UBCF Model's training time is lesser than that of SVD Model, the prediction time of the latter is much lesser than that of the former.
+
+## Recommendations
+
+Now we'll predict the case of a particular user 596.  
+
+```{r}
+mov_rated <- as.data.frame(moviematrix@data[c("596"), ]) 
+colnames(mov_rated) <- c("Rating")
+mov_rated$movieId <- as.integer(rownames(mov_rated))
+mov_rated <- mov_rated %>% filter(Rating != 0) %>% 
+  inner_join (movies, by="movieId") %>%
+  arrange(Rating) %>%
+  select(Movie = "title", Rating)
+kable((mov_rated)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+```{r}
+mov_recommend <- as.data.frame(predSVD@data[c("596"), ]) 
+colnames(mov_recommend) <- c("Rating")
+mov_recommend$movieId <- as.integer(rownames(mov_recommend))
+mov_recommend <- mov_recommend %>% arrange(desc(Rating)) %>% head(6) %>% 
+  inner_join (movies, by="movieId") %>%
+  select(Movie = "title")
+
+kable((mov_recommend)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+# Summary
+
+By building the movie recommender system, we got a better understanding of how it works. The text book "Building Recommendation System with R" is not clear in some places. So, we had to google, to find out the implementation details.
+
+The pros and cons of User based Collaborative Filtering (UBCF) and Single Valued Decomposition (SVD) approaches.
+
+- Recommendations of UBCF complements the item that the user was interactibg with.
+
+- We performed SVD, which decomposes a big matrix to lower order matrices, and oberved that the improvement in prediction.
+
+- UBCF relies on historial choices of user to make future recommendations. It assumes that users' preference to be by and large constant.
+
+# Citation
+
+1. F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS) 5, 4: 19:1–19:19. https://doi.org/10.1145/2827872
+2. Linear Algebra and its Applications, 4th Edition, by David C. Lay
