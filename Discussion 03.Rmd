@@ -1,0 +1,66 @@
+---
+title: 'DATA 612: Discussion 03'
+author: "Forhad Akbar"
+date: "06/23/2020"
+output:
+  html_document:
+    code_folding: show
+    df_print: paged
+    highlight: pygments
+    number_sections: no
+    pdf_document: default
+    theme: cerulean
+    toc: no
+    toc_float: no
+  pdf_document:
+    toc: no
+---
+
+## **Load Packages**
+
+```{r load-packages, warning = FALSE, message = FALSE}
+library(knitr)
+```
+
+## **Research Question**
+
+As more systems and sectors are driven by predictive analytics, there is increasing awareness of the possibility and pitfalls of algorithmic discrimination. In what ways do you think Recommender Systems reinforce human bias? Reflecting on the techniques we have covered, do you think recommender systems reinforce or help to prevent unethical targeting or customer segmentation? Please provide one or more examples to support your arguments.
+
+## **Introduction**
+
+Unjust discrimination is rooted in human history. There is no large society in human history that has been able to dispense with discrimination altogether. Time and again people have created order in their societies by classifying the population into imagined categories, such as superiors, commoners and slaves; white and blacks; patricians and plebeians; Brahmins and Shudras; or rich and poor. These categories have regulated relations between millions of humans by making some people legally, politically or socially superior to others [Harari 2014].  
+
+With the advancement of technology in last decade using algorithm in decision making became very common in all sectors and systems.  In the public and the private sector, organizations can take algorithm driven decisions with far-reaching effects for people. Public sector bodies can use AI for predictive policing for example, or for making decisions on eligibility for pension payments, housing assistance or unemployment benefits. In the private sector, AI can be used to select job applicants, and banks can use AI to decide whether to grant individual consumers credit or loan and set interest rates for them. Moreover, many small decisions, taken together in our daily life, can have large effects. For example, AI-driven price discrimination could lead to certain groups in society consistently paying more.
+
+## **In what ways do you think Recommender Systems reinforce human bias?**
+
+Recommender system can reinforce human bias as a result of hidden bias in the data and algorithm or features used. Biases can be statistical, cultural and cognitive.  
+
+- **Statistical:** Significant systematic deviation from a prior (possibly unknown) distribution.  
+- **Cultural:** Interpretations and judgments phenomena acquired through our life.  
+- **Cognitive:** Systematic pattern of deviation from norm or rationality in judgment.  
+
+Most critics of search and recommender systems focus on cultural biases, including: gender, racial, sexual, age, religious, social, linguistic, geographic, political, educational, economic, and technological. But, many people extrapolate results of a sample to the whole population – without considering statistical biases, including the gathering process, sampling process, validity, completeness, noise, or spam. In addition, there is cognitive bias when measuring bias. For example, one type of cognitive bias is confirmation bias, which is the tendency to search for, interpret, favor, and recall information in a way that affirms one’s prior beliefs or hypotheses.  
+
+Recommender system runs on data. So, if the data contain biases in any of above way that will reinforce human bias. Now, bigger question is whether the bias is good or bad. We all bias in some sense. I have specific choice or bias towards the movies that I like, books that I read or any stuff that I buy. Recommender system is no different than a sales person trying to sell his product to customers. Moreover, recommender system makes the process efficient by analyzing historical data points and offering tons of choices. But, it raises problem when machine or algorithm making decision instead of a person.  
+
+## **Reflecting on the techniques we have covered, do you think recommender systems reinforce or help to prevent unethical targeting or customer segmentation?**  
+
+I think it’s not possible to answer in a yes or no whether recommender systems reinforce or help to prevent unethical targeting or customer segmentation. A good robust recommender system that build following laws and ethics can prevent unethical targeting or customer segmentation where in some case it can reinforce unethical targeting or customer segmentation.   
+
+## **Example:**
+
+Online retailer Amazon, whose global workforce is 60 percent male and where men hold 74 percent of the company’s managerial positions, had to discontinue use of a recruiting algorithm after discovering gender bias. The data that engineers used to create the algorithm were derived from the resumes submitted to Amazon over a 10-year period, which were predominantly from white males. The algorithm was taught to recognize word patterns in the resumes, rather than relevant skill sets, and these data were benchmarked against the company’s predominantly male engineering department to determine an applicant’s fit. As a result, the AI software penalized any resume that contained the word “women’s” in the text and downgraded the resumes of women who attended women’s colleges, resulting in gender bias.
+
+In December 2018, President Trump signed the First Step Act, new criminal justice legislation that encourages the usage of algorithms nationwide. In particular, the system would use an algorithm to initially determine who can redeem earned-time credits—reductions in sentence for completion of educational, vocational, or rehabilitative programs—excluding inmates deemed higher risk. There is a likelihood that these algorithms will perpetuate racial and class disparities, which are already embedded in the criminal justice system. As a result, African-Americans and poor people in general will be more likely to serve longer prison sentences.
+
+## **Conclusion**
+
+While current laws do not necessarily mitigate and resolve other implicit or unconscious biases that can be baked into recommendation system, companies and other operators should guard against violating these statutory guardrails in the design of algorithms, as well as mitigating their implicit concern to prevent past discrimination from continuing.
+
+## **Sources**
+
+https://www.youtube.com/watch?v=MqoRzNhrTnQ  
+https://www.searchenginejournal.com/biases-search-recommender-systems/339319/#close
+https://www.ynharari.com/book/sapiens/  
+https://www.reuters.com/article/us-amazon-com-jobs-automation-insight/amazon-scraps-secret-ai-recruiting-tool-that-showed-bias-against-women-idUSKCN1MK08G  
