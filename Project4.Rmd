@@ -1,0 +1,429 @@
+---
+title: "Project 4 | Accuracy and Beyond"
+author: "Forhad Akbar"
+date: "6/27/2020"
+output:
+  rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Project Objectives
+
+The goal of this assignment is give you practice working with accuracy and other recommender system metrics.  
+
+In this assignment you’re asked to do at least one or (if you like) both of the following:  
+
+- Work in a small group, and/or  
+- Choose a different dataset to work with from your previous projects.
+
+##Deliverables  
+
+1. As in your previous assignments, compare the accuracy of at least two recommender system algorithms against your offline data.  
+2. Implement support for at least one business or user experience goal such as increased serendipity, novelty, or diversity.  
+3. Compare and report on any change in accuracy before and after you’ve made the change in #2.  
+4. As part of your textual conclusion, discuss one or more additional experiments that could be performed and/or metrics that could be evaluated only if online evaluation was possible. Also, briefly propose how you would design a reasonable online evaluation environment.  
+
+You’ll find some of the material discussed in this week’s reading to be helpful in completing this project. You may also want to look at papers online, or search for “recsys” on youtube or slideshare.net.  
+
+# Libraries
+
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(recommenderlab)
+library(reshape2)
+library(RCurl)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Data Preparation and Exploration
+
+We gathered data from section "recommended for education and development" of site https://grouplens.org/datasets/movielens/. This site provides two links, from which we chose the link for the smaller file, because the larger one (named as Full) is too large to load into github. Description of the data is as follows:
+
+This dataset (ml-latest-small) describes 5-star rating and free-text tagging activity from MovieLens, a movie recommendation service. It contains 100836 ratings and 3683 tag applications across 9742 movies. These data were created by 610 users between March 29, 1996 and September 24, 2018. This dataset was generated on September 26, 2018. There are 4 *.csv files, from which we chose two files movies.cv and ratings.csv, for our down stream analysis.
+
+# Citation
+
+F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS) 5, 4: 19:1–19:19. https://doi.org/10.1145/2827872
+
+## Load Data
+
+```{r}
+movies <- read.csv("https://raw.githubusercontent.com/forhadakbar/data612summer2020/master/Project%2002/movies.csv")
+ratings <- read.csv("https://raw.githubusercontent.com/forhadakbar/data612summer2020/master/Project%2002/ratings.csv")
+```
+
+## Preview data
+
+```{r}
+#Preview movies data
+kable(head(movies, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+```{r}
+#Preview ratings data
+kable(head(ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+## Combine Data
+Join movies with ratings on movieId
+
+```{r}
+movie_ratings <- merge(ratings, movies, by="movieId")
+#Preview ratings data
+kable(head(movie_ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+
+
+## Create Matrix
+
+As opposed to *MovieLense* of the *recommenderlab*, our dataset does not come as member of class *realRatingMatrix*. So, in the following code-chunk, we'll create a realRatingMatrix dataset, called moviematrix. By putting moviematrix into class realRatingMatrix, we'll be able to apply some useful functions on moviematrix (refer: page 33 of *Building a Recommendation System with R*).
+
+```{r}
+moviematrix <- ratings %>% select(-timestamp) %>% spread(movieId, rating)
+
+row.names(moviematrix) <- moviematrix[, 1]
+
+moviematrix <- moviematrix[-c(1)]
+
+moviematrix <- as(as.matrix(moviematrix), "realRatingMatrix")
+
+moviematrix
+```
+
+At this point, we'll take stalk of the important characteristics of moviematrix.
+
+```{r}
+dim(moviematrix)
+```
+
+```{r}
+head(getData.frame(moviematrix))
+```
+
+# Data Visualization
+
+## Exploring the values of the rating
+
+```{r}
+# Vectorize and create unique vector.
+vector_ratings <- as.vector(moviematrix@data)
+unique(vector_ratings)
+```
+
+
+```{r}
+# The ratings are in the range 0-5. Let's count the occurrences of each of them.
+table_ratings <- table(vector_ratings)
+kable(table_ratings)
+```
+
+Rating equal to 0 represents a missing value, so we'll purge out the zero-ratings from vector_ratings.
+
+
+```{r}
+vector_ratings <- vector_ratings[vector_ratings != 0]
+vector_ratings <- factor(vector_ratings)
+qplot(vector_ratings) + ggtitle("Distribution of the ratings")
+```
+
+
+## Exploring which movies have been viewed
+
+```{r}
+views_per_movie <- colCounts(moviematrix)
+```
+
+```{r}
+
+table_views <- data.frame(
+movie = names(views_per_movie),
+views = views_per_movie
+)
+names(table_views)[names(table_views) == "movie"] <- "movieId"
+table_views <- merge(table_views, movies, by="movieId")
+table_views <- table_views[order(table_views$views, decreasing =
+TRUE), ]
+```
+
+```{r}
+ggplot(table_views[1:6, ], aes(x = title, y = views)) +
+geom_bar(stat="identity") + theme(axis.text.x =
+element_text(angle = 45, hjust = 1)) + ggtitle("Number of views
+of the top movies")
+```
+
+## Exploring the average ratings
+
+```{r}
+average_ratings <- colMeans(moviematrix)
+qplot(average_ratings, fill=..count.., geom="histogram",binwidth = 0.1, main= "Distribution of average movie rating", xlab = "Average Rating", ylab = "Count") 
+```
+
+## Selecting the most relevant data
+
+When we explored the data, we noticed that the table contains
+
+a) Movies that have been viewed only a few times. Therefore, their ratings might be biased. So, we'll keep movies that have been watched at least 50 times. 
+b) Users, who rated only a few movies. Therefore, their ratings might be biased too. So, we'll keep users, who have rated at least 50 movies
+
+
+```{r}
+# rowCounts returns the users
+# colCounts returns the movies
+(moviematrix <- moviematrix[rowCounts(moviematrix) > 50, colCounts(moviematrix) > 50])
+dim(moviematrix)
+```
+
+Now we have 378 users and 436 items with 36214 ratings.
+
+Let's build the chart again:
+
+```{r}
+average_ratings <- colMeans(moviematrix)
+# Histogram: average rating per user
+qplot(average_ratings, fill=..count.., geom="histogram",binwidth = 0.1, main= "Histogram of average rating per user", xlab = "Average Rating", ylab = "No. of Ratings") 
+```
+
+# Data Normalization
+
+```{r}
+movie_Normalization <- normalize(moviematrix)
+avg <- round(rowMeans(movie_Normalization), 5)
+table(avg)
+```
+
+```{r}
+min_Items <- quantile(rowCounts(moviematrix), 0.95)
+min_Users <- quantile(colCounts(moviematrix), 0.95)
+
+image(moviematrix[rowCounts(moviematrix) > min_Items, colCounts(moviematrix) > min_Users], 
+    main = "Heatmap of the Top Users and Movies (Non-Normalized")
+```
+
+```{r}
+image(movie_Normalization[rowCounts(movie_Normalization) > min_Items, colCounts(movie_Normalization) > 
+    min_Users], main = "Heatmap of the Top Users and Movies (Normalized)")
+```
+
+# Recommendation algorithms
+
+## Split the dataset into training set (80%) and testing set (20%):
+
+```{r}
+set.seed(80)
+train_set <- sample(x = c(TRUE, FALSE), size = nrow(moviematrix), replace = TRUE, 
+    prob = c(0.8, 0.2))
+
+movie_Train <- moviematrix[train_set, ]
+movie_Test <- moviematrix[!train_set, ]
+```
+
+# Item-Item Collaborative Filtering
+
+This is a filtering method, where similarity between items is calculated using users' ratings of items. That means the algorithm recommends items similar to the users' previous selections. In the algorithm, the similarities between different items are computed by one of the similarity measures, and then similarity values are used to predict ratings for user-item pairs absent in the data.
+
+## Training model
+
+In below step we'll train the model, with a value of k = 30, which is the default.
+
+```{r}
+(model <- Recommender(movie_Train, method = "IBCF", parameter = list(k = 30)))
+model
+```
+
+
+## Examining the Similarity Matrix
+
+```{r}
+similarityMatrix <- getModel(model)$sim
+which_max <- order(colSums(similarityMatrix > 0), decreasing = TRUE)[1:10]
+topMovies <- as.data.frame(as.integer(rownames(similarityMatrix)[which_max]))
+colnames(topMovies) <- c("movieId")
+
+data <- topMovies %>% inner_join(movies, by = "movieId") %>% select(Movie = "title")
+
+kable((data)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+## Recommendations using test set
+
+```{r}
+(pred <- predict(model, newdata = movie_Test, n = 6))
+```
+
+```{r}
+user1 <- as.data.frame(movie_Test@data[1, movie_Test@data[1, ] > 0])
+colnames(user1) <- c("Rating")
+user1[c("movieId")] <- as.integer(rownames(user1))
+
+data <- movies %>% inner_join(user1, by = "movieId") %>% select(Movie = "title", Rating, genres) %>% arrange(desc(Rating))
+
+kable((data)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+```{r}
+recommended <- pred@itemLabels[pred@items[[1]]]
+recommended <- as.data.frame(as.integer(recommended))
+colnames(recommended) <- c("movieId")
+
+data <- recommended %>% inner_join(movies, by = "movieId") %>% select(Movie = "title",genres)
+
+kable((data)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+# User-User Collaborative Filtering
+
+## Training the model
+
+```{r}
+(model <- Recommender(movie_Train, method = "UBCF"))
+```
+
+## Recommendations using test set
+
+```{r}
+(pred <- predict(model, newdata = movie_Test, n = 6))
+```
+
+```{r}
+# Recommendations for the first user
+recommended <- pred@itemLabels[pred@items[[1]]]
+recommended <- as.data.frame(as.integer(recommended))
+colnames(recommended) <- c("movieId")
+
+data <- recommended %>% inner_join(movies, by = "movieId") %>% select(Movie = "title",genres)
+
+kable((data)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+
+# Comparison of Recommender Models
+
+```{r}
+set.seed(101)
+
+minimum = min(rowCounts(moviematrix))
+minimum
+```
+
+```{r}
+evaluation = evaluationScheme(data = moviematrix, method = "cross-validation", k = 10, given = 10, goodRating = 3.5)
+evaluation
+```
+
+```{r}
+ev_train = getData(evaluation, "train")
+ev_known = getData(evaluation, "known")
+ev_unknown = getData(evaluation, "unknown")
+```
+
+```{r}
+# Item
+item_model = Recommender(data = ev_train, method = "IBCF", parameter = list(method = "Cosine"))
+item_model_pred = predict(object = item_model, newdata = ev_known, n = 10, type = "ratings")
+item = calcPredictionAccuracy(x = item_model_pred, data = ev_unknown, byUser = FALSE)
+
+# User
+user_model = Recommender(data = ev_train, method = "UBCF", parameter = list(method = "Cosine"))
+user_model_pred = predict(object = user_model, newdata = ev_known, n = 10, type = "ratings")
+user = calcPredictionAccuracy(x = user_model_pred, data = ev_unknown, byUser = FALSE)
+
+# Comparison
+kable(rbind(item, user))%>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed","responsive"),full_width   = F,position = "left",font_size = 12) %>%
+  row_spec(0, background ="gray")
+```
+
+```{r}
+eval_sets = evaluationScheme(data = moviematrix, method = "cross-validation", k = 4, given = 10, goodRating = 3.5)
+I_results = evaluate(x = eval_sets, method = "IBCF", n = seq(10, 100, 10))
+```
+
+```{r}
+kable(head(getConfusionMatrix(I_results)[[1]]))%>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed","responsive"),full_width   = F,position = "left",font_size = 12) %>%
+  row_spec(0, background ="gray")
+```
+
+```{r}
+U_results = evaluate(x = eval_sets, method = "UBCF", n = seq(10, 100, 10))
+```
+
+```{r}
+kable(head(getConfusionMatrix(U_results)[[1]]))%>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed","responsive"),full_width   = F,position = "left",font_size = 12) %>%
+  row_spec(0, background ="gray")
+```
+
+```{r}
+plot(U_results, annotate = TRUE, main = "ROC curve of UBCF")
+```
+
+```{r}
+plot(I_results, annotate = TRUE, main = "ROC curve of IBCF")
+```
+
+```{r}
+mult_models = list(
+  IBCF_cos = list(name = "IBCF", param = list(method = "Cosine")),
+  IBCF_pearson = list(name = "IBCF", param = list(method = "pearson")),
+  UBCF_cos = list(name = "UBCF", param = list(method = "Cosine")),
+  UBCF_pearson = list(name = "UBCF", param = list(method = "pearson")),
+  Random = list(name = "RANDOM", param = NULL),
+  Popular = list(name = "POPULAR", param = NULL)
+)
+
+# Testing models
+models = evaluate(eval_sets, mult_models, n= c(1, 5, seq(10, 100, 10)))
+```
+
+```{r}
+# Plotting models
+plot(models, annotate = T, legend="topleft")
+```
+
+```{r}
+plot(models, "prec/rec", annotate = F, main="Precision/Recall", legend="topright")
+```
+
+# Summary
+
+By building the movie recommender system, we got a better understanding of how it works. The text book "Building Recommendation System with R" is not clear in some places. So, we had to google, to find out the implementation details.
+
+The pros and cons of User based Collaborative Filtering (UBCF) and Item based Collaborative Filtering (IBCF) approaches.
+
+- Recommendations of UBCF complements the item that the user was interactibg with. Since users might not be looking for direct substitutes to a movie, UBCF provides a better recommendation than IBCF.
+
+- UBCF is memory intensive. So, with humongous number of users, processing time would be high.
+
+- UBCF relies on historial choices of user to make future recommendations. It assumes that users' preference to be by and large constant.
