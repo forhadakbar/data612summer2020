@@ -40,7 +40,7 @@ I think Renee Diresta’s article is misguided and eventually a call for censors
 
 It is also true that upon watching a right wing content user might get a recommendation of CNN segment on the same topic. This doesn’t prove Youtube intentionally promoting extreme content. Moreover, burning question is how you define extreme. A far left content might not be extreme for a far leftist where it might for a rightist and vice versa.  
 
-This article is published as an opinion where there was no concrete evidence provided, Youtube being intentionally promoting extreme content. At the end of the day it boils down to freedom choice and expression. There will always be trade off. As long as any content is not breaking any laws or regulation it shouldn’t be restricted from recommending to user because restricting content without allowing for the possibility that tomorrow, it will be our content that is restricted. 
+This article was published as an opinion where there was no concrete evidence provided, Youtube being intentionally promoting extreme content. At the end of the day it boils down to freedom choice and expression. There will always be trade off. As long as any content is not breaking any laws or regulation, it shouldn’t be restricted from recommending to user because restricting content without allowing for the possibility that tomorrow, it will be our content that is restricted. 
 I think we should rather focus on how we can build recommender system that are ethical and avoid discrimination.  
 
 ## *How to counter the radicalizing effects of recommender systems or ways to prevent algorithmic discrimination:*  
