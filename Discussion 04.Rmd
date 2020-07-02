@@ -1,0 +1,51 @@
+---
+title: 'DATA 612: Discussion 04'
+author: "Forhad Akbar"
+date: "07/02/2020"
+output:
+  html_document:
+    code_folding: show
+    df_print: paged
+    highlight: pygments
+    number_sections: no
+    pdf_document: default
+    theme: cerulean
+    toc: no
+    toc_float: no
+  pdf_document:
+    toc: no
+---
+
+## **Load Packages**
+
+```{r load-packages, warning = FALSE, message = FALSE}
+library(knitr)
+```
+
+## **Research Question**
+
+Mitigating the Harm of Recommender Systems  
+
+Read one or more of the articles below and consider how to counter the radicalizing effects of recommender systems or ways to prevent algorithmic discrimination.  
+
+- Renee Diresta, Wired.com (2018): Up Next: A Better Recommendation System  
+
+- Zeynep Tufekci, The New York Times (2018): YouTube, the Great Radicalizer  
+
+- Sanjay Krishnan, Jay Patel, Michael J. Franklin, Ken Goldberg (n/a): Social Influence Bias in Recommender Systems: A Methodology for Learning, Analyzing, and Mitigating Bias in Ratings  
+
+## **Opinion On Article:  Renee Diresta, Wired.com (2018): Up Next: A Better Recommendation System**
+
+I think Renee Diresta’s article is misguided and eventually a call for censorship. There are different kinds of content in Youtube. It’s an open platform for anyone in public to share their content and views. This means there will be a lot of perspectives outside mainstream, partly because people with ‘radical’ ideas or views don’t get a platform in more traditional mainstream media. This is one of the main reasons of Youtube’s success. User will be going to run into both extreme and opposing ideas.   
+
+It is also true that upon watching a right wing content user might get a recommendation of CNN segment on the same topic. This doesn’t prove Youtube intentionally promoting extreme content. Moreover, burning question is how you define extreme. A far left content might not be extreme for a far leftist where it might for a rightist and vice versa.  
+
+This article is published as an opinion where there was no concrete evidence provided, Youtube being intentionally promoting extreme content. At the end of the day it boils down to freedom choice and expression. There will always be trade off. As long as any content is not breaking any laws or regulation it shouldn’t be restricted from recommending to user because restricting content without allowing for the possibility that tomorrow, it will be our content that is restricted. 
+I think we should rather focus on how we can build recommender system that are ethical and avoid discrimination.  
+
+## *How to counter the radicalizing effects of recommender systems or ways to prevent algorithmic discrimination:*  
+
+I believe radicalizing effects describe in the second article is based on user produced data and the system is doing exactly what any good recommender should do. I think instead calling for a censorship which both first two article did, recommender system should add more mitigating option for user. For example when you click on anti-islamic content and the system start showing you similar content, there should be an option for user to turn off further recommendation.  
+
+Government and companies should work together to prevent algorithmic discrimination. Government should take initiative to pass laws and regulation which capable to keep up with technological advancement. Companies should build recommender system carefully excluding discriminatory features and avoid training recommender system using data with hidden discriminatory patterns.  
+
