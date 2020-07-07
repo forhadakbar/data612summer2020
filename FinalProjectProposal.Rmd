@@ -1,0 +1,94 @@
+---
+title: " Final Project Proposal"
+author: "Forhad Akbar"
+date: "7/06/2020"
+output:
+  rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Project Objectives
+
+The goal for your final project is for you to build out a recommender system using a large dataset (ex: 1M+ ratings or 10k+ users, 10k+ items. There are three deliverables, with separate dates:
+
+Planning Document Find an interesting dataset and describe the system you plan to build out. If you would like to use one of the datasets you have already worked with, you should add a unique element or incorporate additional data. (i.e. explicit features you scrape from another source, like image analysis on movie posters). The overall goal, however, will be to produce quality recommendations by extracting insights from a large dataset. You may do so using Spark, or another distributed computing method, OR by effectively applying one of the more advanced mathematical techniques we have covered. There is no preference for one over the other, as long as your recommender works! The planning document should be written up and published as a notebook on GitHub or in RPubs.Please submit the link in the Unit 4 folder, due Thursday, July 5.
+
+# Libraries
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(recommenderlab)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+
+```
+
+# Data 
+
+We gathered data from section "recommended for education and development" of site https://grouplens.org/datasets/movielens/. This site provides two links, from which we chose the link for the full file. Description of the data is as follows:
+
+This dataset (ml-latest) describes 5-star rating and free-text tagging activity from MovieLens, a movie recommendation service. It contains 27,000,000 ratings and 1,100,000 tag applications across 58,000 movies. These data were created by 280,000 users between January 09, 1995 and September 26, 2018. This dataset was generated on September 26, 2018. There are 4 *.csv files, from which we chose two files movies.cv and ratings.csv, for our down stream analysis.
+
+# Citation
+
+F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS) 5, 4: 19:1–19:19. https://doi.org/10.1145/2827872
+
+## Load Data
+
+```{r}
+movies <- read.csv("./movies.csv")
+ratings <- read.csv("./ratings.csv")
+```
+
+## Preview data
+
+```{r}
+#Preview movies data
+kable(head(movies, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+```{r}
+#Preview ratings data
+kable(head(ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+## Combine Data
+Join movies with ratings on movieId
+
+```{r}
+movie_ratings <- merge(ratings, movies, by="movieId")
+#Preview ratings data
+kable(head(movie_ratings, n = 10L)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = T, color = "white", background = "#fc5e5e") %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+# Deliverables:  
+A github repository with all data, code needed to understand and run the model. The final result will be published to rpub.  
+
+# Projected Workflow:
+- Data Preparation and Exploration  
+- Pre-process/clean data  
+- Reshape the dataset to user-item matrix  
+- Generate summary statistics  
+- Data Normalization  
+- Data visualization  
+- Split the data into training and testing  
+- Implement recommendation models and train the models  
+- Predict  
+- Evaluate accuracy/performance  
+- Evaluate methods to improve model performance  
+- Finalize Model  
+- Generate movies recommendation  
+- Time permitting, we'll build a ShinyApp and do it on Spark  
+
