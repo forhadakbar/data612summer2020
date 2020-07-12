@@ -3,3 +3,5 @@
 1. Final Project proposal  
 
 2. FinalProject Contains: rating.csv, anime.csv, FinalProject.rmd, FinalProject.html  
+
+3. Presentation.m4
